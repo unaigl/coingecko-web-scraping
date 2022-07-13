@@ -25,30 +25,24 @@ const puppeteer = require("puppeteer");
     return { urls, tickers };
   });
 
-  // Deleting duplicated data
+  // Filtering and cleaning data
+  // Deleting duplicated data from urls
   const setUrls = [...new Set(urls)];
   // Cleaning our tickers data array
-  const finalTickers = tickers.filter((ticker) => {
-    let _finalTickers = [];
-    // Extracting only the tickers we've inside our array
-    let _splitted = ticker.split("");
-    var _counter = 0;
-    let _tick = "";
-    for (let i = 0; i < _splitted.length; i++) {
-      if (_splitted[i] === _splitted[i].toUpperCase()) {
-        _counter++;
-        _tick += _splitted[i];
-      }
+  let finalTickers = [];
+  let tokenNames = [];
+  // Extracting only the tickers we've inside our array
+  for (let i = 0; i < tickers.length; i++) {
+    let str = tickers[i].trim();
+    // console.log(str);
+    if (str === str.toUpperCase()) {
+      finalTickers.push(tickers[i]);
+    } else {
+      tokenNames.push(tickers[i]);
     }
-    if (_counter >= 2) {
-      _finalTickers.push(_tick);
-      return _finalTickers;
-    }
-    return false;
-  });
-
-  console.log(setUrls);
-  console.log(finalTickers);
+  }
+  console.log("aa", finalTickers);
+  console.log("ccc", tokenNames);
 
   // Obteniendo el contrato
   // for (let i = 0; i < /* webUrls.length */ 3; i++) {
