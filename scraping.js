@@ -24,42 +24,69 @@ const puppeteer = require("puppeteer");
   // Deleting duplicated data from urls
   const urls = [...new Set(duplicatesUrls)];
 
+  /* 
+      SECOND
+      PART
+  */
+
   // Fetching token addresses from urls
   const addresses = [];
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 2; i++) {
     await page.goto(urls[i + 38]);
 
     const tokenAddress = await page.evaluate(() => {
+      var _rawElement;
       try {
-        const _rawElement = document.querySelectorAll(`[data-address]`);
-
-        let _tokenAddress = [];
-        for (let i = 0; i < _rawElement.length; i++) {
-          _tokenAddress.push([
-            _rawElement[i].getAttribute("data-symbol"),
-            _rawElement[i].getAttribute("data-chain-id"),
-            _rawElement[i].getAttribute("data-address"),
-          ]);
-          // _tokenAddress[i].push(_rawElement[i].getAttribute("data-chain-id"));
-          // _tokenAddress[i].push(_rawElement[i].getAttribute("data-address"));
-        }
-        const _elements = [...new Set(_tokenAddress)];
-
-        // Checking arrays with null values to delete them
-        const _tokenData = _elements.filter(
-          (item) => item[0] !== null && item[1] !== null && item[2] !== null
-        );
-        // for (let i = 0; i < item.length; i++) {
-        //   if (item[i] === null) return false;
-        // }
-        // return true;
-
-        return _tokenData;
+        _rawElement = document.querySelectorAll(`[data-address]`);
       } catch (error) {
         console.log(error);
         return null;
       }
+
+      // We will operate inside puppeteer's opened browser due to async functions
+      // Extracting raw data
+      let _tokenAddress = [];
+      for (let i = 0; i < _rawElement.length; i++) {
+        _tokenAddress.push([
+          _rawElement[i].getAttribute("data-symbol"),
+          _rawElement[i].getAttribute("data-chain-id"),
+          _rawElement[i].getAttribute("data-address"),
+        ]);
+      }
+      // Deleting data
+      const _elements = [...new Set(_tokenAddress)];
+
+      // Checking duplicated arrays with null values to delete them
+      const _tokenData = _elements.filter(
+        (item) => item[0] !== null && item[1] !== null && item[2] !== null
+      );
+
+      // Deleting duplicated data while constructing final data obkect
+      const tokenObject = {};
+      // un objeto con su ticker para cada token
+      tokenObject._tokenData[0][0] = {};
+
+      // dentro del objeto, tenemos las propiedades de symbol, chainId_1, chainId_137...
+      // estoy creando un array solo con chains
+      const chains = [];
+      for (let i = 0; i < _tokenData.length; i++) {
+        chains.push(_tokenData[i][1]);
+      }
+      // estoy creando un array solo con los addresses
+      const tokenAddressPerChain = [];
+      for (let i = 0; i < _tokenData.length; i++) {
+        tokenAddressPerChain.push(_tokenData[i][2]);
+      }
+
+      // Integrando los datos en el objeto
+      for (let i = 0; i < chains.length; i++) {
+        tokenObject._tokenData[0][0].chains[i] = {
+          address: tokenAddressPerChain[i],
+        };
+      }
+
+      return _tokenData;
     });
 
     await page.goBack();
