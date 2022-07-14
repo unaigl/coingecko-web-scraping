@@ -7,79 +7,66 @@ const puppeteer = require("puppeteer");
   await page.goto("https://www.coingecko.com/es");
 
   // Evaluating page's DOM elements and extracting data // Console logs inside "evaluate" will print in puppeteer's opened browser
-  const data = await page.evaluate(() => {
+  const duplicatesUrls = await page.evaluate(() => {
     // Extracting DOM elemets to an array // Contains href and ticker
     const _rawUrls = document.querySelectorAll(".coin-name a");
 
     // Looping to extract and filter data
-    const _urls = [];
-    const _tickers = [];
+    const _duplicatesUrls = [];
     for (let i = 0; i < _rawUrls.length; i++) {
       let _url = _rawUrls[i].href;
-      _urls.push(_url);
-
-      // Taking the "ticker" of each token/coin
-      _tickers.push(_rawUrls[i].firstChild.nodeValue);
+      _duplicatesUrls.push(_url);
     }
 
-    return { urls: _urls, rawTickers: _tickers };
+    return _duplicatesUrls;
   });
 
-  const urls = data.urls;
-  const rawTickers = data.rawTickers;
-
-  // Filtering and cleaning data
   // Deleting duplicated data from urls
-  const setUrls = [...new Set(urls)];
-  // Cleaning our tickers data array
-  var finalTickers = [];
-  var tokenNames = [];
-  // Extracting only the tickers we've inside our array
-  // @dev - Be aware of rawTickers.length value, because is defined by an async method
-  for (let i = 0; i < rawTickers.length; i++) {
-    let str = rawTickers[i].trim();
-    // console.log(str);
-    if (str === str.toUpperCase()) {
-      finalTickers.push(rawTickers[i]);
-    } else {
-      tokenNames.push(rawTickers[i]);
-    }
-  }
-  // finalTickers, tokenNames, setUrls
+  const urls = [...new Set(duplicatesUrls)];
 
-  // Obteniendo el contrato
+  // Fetching token addresses from urls
   const addresses = [];
 
   for (let i = 0; i < 1; i++) {
-    await page.goto(setUrls[i + 38]);
-    // console.log(finalTickers[i + 38]);
+    await page.goto(urls[i + 38]);
 
-    const yes = await page.evaluate(() => {
-      // const ticker = `[data-symbol="${finalTickers[i + 38]}"]`; //
-      // const ticker = `[data-chain-id="1"]`;
-      // const ticker = ".cursor-pointer";
-      // const ticker = "[data-address]";
+    const tokenAddress = await page.evaluate(() => {
+      try {
+        const _rawElement = document.querySelectorAll(`[data-address]`);
 
-      // rodo: problema con async
-      const _rawTicker = document.querySelectorAll(`[data-address]`);
-      // const _rawTicker = document.querySelector(ticker);
-      // const _rawAddress = document.querySelectorAll(address);
-      let aa = [];
-      aa.push(_rawTicker[0].getAttribute("data-symbol"));
-      for (let i = 0; i < _rawTicker.length; i++) {
-        aa.push(_rawTicker[i].getAttribute("data-chain-id"));
-        aa.push(_rawTicker[i].getAttribute("data-address"));
+        let _tokenAddress = [];
+        for (let i = 0; i < _rawElement.length; i++) {
+          _tokenAddress.push([
+            _rawElement[i].getAttribute("data-symbol"),
+            _rawElement[i].getAttribute("data-chain-id"),
+            _rawElement[i].getAttribute("data-address"),
+          ]);
+          // _tokenAddress[i].push(_rawElement[i].getAttribute("data-chain-id"));
+          // _tokenAddress[i].push(_rawElement[i].getAttribute("data-address"));
+        }
+        const _elements = [...new Set(_tokenAddress)];
+
+        // Checking arrays with null values to delete them
+        const _tokenData = _elements.filter(
+          (item) => item[0] !== null && item[1] !== null && item[2] !== null
+        );
+        // for (let i = 0; i < item.length; i++) {
+        //   if (item[i] === null) return false;
+        // }
+        // return true;
+
+        return _tokenData;
+      } catch (error) {
+        console.log(error);
+        return null;
       }
-      return aa;
     });
 
     await page.goBack();
-    addresses.push(yes);
+    addresses.push(tokenAddress);
     console.log(addresses);
   }
 
   // Closing browser
   await browser.close();
 })();
-
-// todo: no es necesario sacar los tickers ni los names. si ES NECESARIO tal vez
