@@ -1,3 +1,4 @@
+const fs = require("fs");
 const puppeteer = require("puppeteer");
 
 (async () => {
@@ -32,7 +33,7 @@ const puppeteer = require("puppeteer");
   // Fetching token addresses from urls
   const addresses = [];
 
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < urls.length; i++) {
     await page.goto(urls[i + 38]);
 
     const tokenAddress = await page.evaluate(() => {
@@ -44,7 +45,7 @@ const puppeteer = require("puppeteer");
         return null;
       }
 
-      // We will operate inside puppeteer's opened browser due to async functions
+      // We will run code inside puppeteer's opened browser
       // Extracting raw data
       let _tokenAddress = [];
       for (let i = 0; i < _rawElement.length; i++) {
@@ -52,6 +53,8 @@ const puppeteer = require("puppeteer");
           _rawElement[i].getAttribute("data-symbol"),
           _rawElement[i].getAttribute("data-chain-id"),
           _rawElement[i].getAttribute("data-address"),
+          _rawElement[i].getAttribute("data-decimals"),
+          /* ADD more INFO to json */
         ]);
       }
       // Deleting data
@@ -65,34 +68,43 @@ const puppeteer = require("puppeteer");
       // Deleting duplicated data while constructing final data obkect
       const tokenObject = {};
       // un objeto con su ticker para cada token
-      tokenObject._tokenData[0][0] = {};
+      tokenObject[`${_tokenData[0][0]}`] = {
+        symbol: `${_tokenData[0][0]}`,
+      };
 
-      // dentro del objeto, tenemos las propiedades de symbol, chainId_1, chainId_137...
-      // estoy creando un array solo con chains
+      // Dividing in an array of chains where the token is deployed
       const chains = [];
       for (let i = 0; i < _tokenData.length; i++) {
         chains.push(_tokenData[i][1]);
       }
-      // estoy creando un array solo con los addresses
+      // Dividing in an array of addresses of the token
       const tokenAddressPerChain = [];
       for (let i = 0; i < _tokenData.length; i++) {
         tokenAddressPerChain.push(_tokenData[i][2]);
       }
-
-      // Integrando los datos en el objeto
+      // Dividing in an array token`s decimals
+      const tokenDecimals = [];
+      for (let i = 0; i < _tokenData.length; i++) {
+        tokenDecimals.push(_tokenData[i][3]);
+      }
+      // Adding data to final object, overrides duplicated data
       for (let i = 0; i < chains.length; i++) {
-        tokenObject._tokenData[0][0].chains[i] = {
-          address: tokenAddressPerChain[i],
+        tokenObject[`${_tokenData[0][0]}`][`${chains[i]}`] = {
+          address: [`${tokenAddressPerChain[i]}`],
+          decimals: [`${tokenDecimals[i]}`],
+          /* ADD more INFO to json*/
         };
       }
 
-      return _tokenData;
+      return tokenObject;
     });
 
     await page.goBack();
     addresses.push(tokenAddress);
     console.log(addresses);
   }
+  // creating JSON file
+  fs.writeFileSync("json/TokenAddresses.json", JSON.stringify(addresses));
 
   // Closing browser
   await browser.close();

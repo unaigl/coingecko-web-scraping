@@ -5,11 +5,7 @@ const a = [
   [null, "ssssssssdwd", 3],
 ];
 
-const b = a.filter((aa) => aa[0] !== null && aa[1] !== null && aa[2] !== null);
-
-console.log(b);
-
-// dentro del objeto, habra un objeto mas por cadena
+// Data format
 
 obj = {
   sand: {
